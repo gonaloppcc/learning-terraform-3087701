@@ -14,7 +14,7 @@ data "aws_ami" "app_ami" {
   owners = ["979382823631"] # Bitnami
 }
 
-module "autoscaling" {
+module "blog_as" { # autoscaling
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "9.0.1"
 
@@ -27,24 +27,12 @@ module "autoscaling" {
 
   image_id      = data.aws_ami.app_ami.id
   instance_type = var.instance_type
-}
 
-data "aws_vpc" "default" {
-  default = true
-}
-
-module "blog_vpc" {
-  source = "terraform-aws-modules/vpc/aws"
-
-  name = "dev"
-  cidr = "10.0.0.0/16"
-
-  azs            = ["us-west-2a", "us-west-2b", "us-west-2c"]
-  public_subnets = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-
-  tags = {
-    Terraform   = "true"
-    Environment = "dev"
+  traffic_source_attachments = {
+    alb_attachment = {
+      traffic_source_identifier = module.alb.target_groups["blog-instance"].arn
+      traffic_source_type       = "elbv2" # ALB/NLB
+    }
   }
 }
 
@@ -86,6 +74,26 @@ module "blog_alb" {
     Environment = "dev"
   }
 }
+
+data "aws_vpc" "default" {
+  default = true
+}
+
+module "blog_vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+
+  name = "dev"
+  cidr = "10.0.0.0/16"
+
+  azs            = ["us-west-2a", "us-west-2b", "us-west-2c"]
+  public_subnets = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+  }
+}
+
 
 module "blog_sg" {
   source  = "terraform-aws-modules/security-group/aws"
