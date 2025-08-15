@@ -16,15 +16,15 @@ data "aws_ami" "app_ami" {
 
 # Simple Storage Service (S3)
 resource "aws_s3_bucket" "blog_logs_bucket" {
-    bucket = "blog-alb-logs-4eb99610557245b39ce822399543be37"
+  bucket = "blog-alb-logs-4eb99610557245b39ce822399543be37"
 
-    lifecycle {
-        prevent_destroy = true
-    }
+  lifecycle {
+    prevent_destroy = true
+  }
 
-    tags = {
-        Environment = "Dev"
-    }
+  tags = {
+    Environment = "Dev"
+  }
 }
 
 # AutoScaling
@@ -61,9 +61,11 @@ module "blog_alb" {
   # Security Group
   security_groups = [module.blog_sg.security_group_id]
 
+  /*
   access_logs = {
     bucket = aws_s3_bucket.blog_logs_bucket.bucket
   }
+  */
 
   target_groups = {
     asg_tg = {
