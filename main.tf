@@ -14,7 +14,8 @@ data "aws_ami" "app_ami" {
   owners = ["979382823631"] # Bitnami
 }
 
-module "blog_as" { # autoscaling
+# AutoScaling
+module "blog_as" {
   source  = "terraform-aws-modules/autoscaling/aws"
   version = "9.0.1"
 
@@ -29,13 +30,13 @@ module "blog_as" { # autoscaling
   instance_type = var.instance_type
 
   traffic_source_attachments = {
-    alb_attachment = {
-      traffic_source_identifier = module.blog_alb.target_groups["blog-instance"].arn
-      traffic_source_type       = "elbv2" # ALB/NLB
+    asg_to_alb = {
+      traffic_source_identifier = module.blog_alb.target_groups["asg_tg"].arn
     }
   }
 }
 
+# Application Load Balancer
 module "blog_alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "9.17.0"
@@ -52,34 +53,32 @@ module "blog_alb" {
   }
 
   target_groups = {
-    blog-instance = {
-      name_prefix = "blog-"
-      protocol    = "HTTP"
-      port        = 80
-      target_type = "instance"
+    asg_tg = {
+      name_prefix       = "blog-"
+      protocol          = "HTTP"
+      port              = 80
+      target_type       = "instance"
+      create_attachment = false # Important for ASG attachment
     }
   }
 
-  listeners = {
-    ex-https = {
+  listeners = [
+    {
       port     = 80
       protocol = "HTTP"
 
       forward = {
-        target_group_key = "blog-instance"
+        target_group_key = "asg_tg"
       }
     }
-  }
+  ]
 
   tags = {
     Environment = "dev"
   }
 }
 
-data "aws_vpc" "default" {
-  default = true
-}
-
+# Virtual Private Cloud
 module "blog_vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
@@ -95,7 +94,7 @@ module "blog_vpc" {
   }
 }
 
-
+# Security Group
 module "blog_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "5.3.0"
