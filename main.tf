@@ -15,17 +15,15 @@ data "aws_ami" "app_ami" {
 }
 
 # Simple Storage Service (S3)
+/*
 resource "aws_s3_bucket" "blog_logs_bucket" {
   bucket = "blog-alb-logs-4eb99610557245b39ce822399543be37"
-
-  lifecycle {
-    prevent_destroy = true
-  }
 
   tags = {
     Environment = "Dev"
   }
 }
+*/
 
 # AutoScaling
 module "blog_as" {
