@@ -14,6 +14,19 @@ data "aws_ami" "app_ami" {
   owners = ["979382823631"] # Bitnami
 }
 
+# Simple Storage Service (S3)
+resource "aws_s3_bucket" "blog_logs_bucket" {
+    bucket = "blog-alb-logs-4eb99610557245b39ce822399543be37"
+
+    lifecycle {
+        prevent_destroy = true
+    }
+
+    tags = {
+        Environment = "Dev"
+    }
+}
+
 # AutoScaling
 module "blog_as" {
   source  = "terraform-aws-modules/autoscaling/aws"
@@ -49,7 +62,7 @@ module "blog_alb" {
   security_groups = [module.blog_sg.security_group_id]
 
   access_logs = {
-    bucket = "blog-alb-logs"
+    bucket = aws_s3_bucket.blog_logs_bucket.bucket
   }
 
   target_groups = {
